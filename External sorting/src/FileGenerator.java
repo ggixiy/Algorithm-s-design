@@ -8,11 +8,11 @@ import java.util.Random;
 public class FileGenerator {
     private static Random r = new Random();
     private static int recordsAmount = 400000;
-    public File a = new File("E:\\projects\\AD\\External sorting\\A.txt");
+    public static File a = new File("E:\\projects\\AD\\External sorting\\A.txt");
 
     public static void GenerateFile(){
         try (FileOutputStream file = new
-                FileOutputStream("E:\\projects\\AD\\External sorting\\A.txt");)
+                FileOutputStream(a);)
         {
             for(int i = 0; i < recordsAmount; ++i)
             {

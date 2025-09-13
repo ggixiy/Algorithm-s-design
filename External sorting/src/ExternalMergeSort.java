@@ -20,7 +20,7 @@ public class ExternalMergeSort{
                 line = scanner.nextLine();
 
                 if(n == seriesSize){
-                    inFirstSeries = false;
+                    inFirstSeries = !inFirstSeries;
                     n = 0;
                 }
 
