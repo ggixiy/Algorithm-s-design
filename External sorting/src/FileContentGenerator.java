@@ -5,12 +5,11 @@ import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Random;
 
-public class FileGenerator {
+public class FileContentGenerator {
     private static Random r = new Random();
-    private static int recordsAmount = 400000;
-    public static File a = new File("E:\\projects\\AD\\External sorting\\A.txt");
+    public static int recordsAmount = 32929825;
 
-    public static void GenerateFile(){
+    public static void GenerateFile(File a){
         try (FileOutputStream file = new
                 FileOutputStream(a);)
         {
@@ -25,7 +24,7 @@ public class FileGenerator {
     }
 
     public static byte[] GenerateRecord(){
-        int key = r.nextInt(1000);
+        int key = r.nextInt(100000);
         String text = GenerateString(5 + r.nextInt(16));
         DateFormat d = new SimpleDateFormat("yyyy-MM-dd");
         Calendar c = Calendar.getInstance();

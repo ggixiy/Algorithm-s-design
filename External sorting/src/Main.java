@@ -12,6 +12,8 @@ class Main{
         generator.GenerateFile();
         m.checkMemory();*/
 
+
+        File a = new File("E:\\projects\\AD\\External sorting\\A.txt");
         File b = new File("E:\\projects\\AD\\External sorting\\B.txt");
         File c = new File("E:\\projects\\AD\\External sorting\\C.txt");
 
@@ -20,16 +22,13 @@ class Main{
         FileOutputStream file2 = new
                 FileOutputStream(c);)
         {
-            FileGenerator generator = new FileGenerator();
-            ExternalMergeSort sort = new ExternalMergeSort();
-            generator.GenerateFile();
-            sort.Distribution(generator.a, b, c);
+            FileContentGenerator generator = new FileContentGenerator();
+            ModifiedExternalMergeSort sort = new ModifiedExternalMergeSort();
+            generator.GenerateFile(a);
+            sort.ExternalSort(a, b, c, FileContentGenerator.recordsAmount);
 
         } catch (Exception e) {
-            throw new RuntimeException();
+            e.printStackTrace();
         }
-
-
-
     }
 }
