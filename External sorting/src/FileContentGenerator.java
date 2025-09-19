@@ -7,7 +7,7 @@ import java.util.Random;
 
 public class FileContentGenerator {
     private static Random r = new Random();
-    public static int recordsAmount = 32929825;
+    public static int recordsAmount = 200;
 
     public static void GenerateFile(File a){
         try (FileOutputStream file = new
