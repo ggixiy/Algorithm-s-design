@@ -1,4 +1,8 @@
 package com.example.lab3;
 
-public class UI {
+public interface UI {
+    void showMessage(String text);
+    void showDice(int[] dice);
+    String askCategory();
+    boolean askHold(int index);
 }
