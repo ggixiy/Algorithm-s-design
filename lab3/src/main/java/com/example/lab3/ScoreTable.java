@@ -1,38 +1,72 @@
 package com.example.lab3;
 
 import java.util.*;
+import javafx.beans.property.IntegerProperty;
+import javafx.beans.property.SimpleIntegerProperty;
 
 public class ScoreTable {
-    private final Map<String, Integer> scores = new LinkedHashMap<>();
+    private final Map<String, IntegerProperty> scores = new LinkedHashMap<>();
+    private final Map<String, Boolean> usedCategories = new LinkedHashMap<>();
+    private String[] categories = {
+            "Ones", "Twos", "Threes", "Fours", "Fives", "Sixes", "Sum", "Bonus",
+            "Three of a kind", "Four of a kind", "Full house",
+            "Small straight", "Large straight", "Yatzy", "Yatzy bonus", "Chance"
+    };
 
     public ScoreTable() {
-        String[] categories = {
-                "ONES", "TWOS", "THREES", "FOURS", "FIVES", "SIXES",
-                //-------------------------------------------------
-                "THREE_OF_A_KIND", "FOUR_OF_A_KIND", "FULL_HOUSE",
-                "SMALL_STRAIGHT", "LARGE_STRAIGHT", "CHANCE", "YATZY"
-        };
         for (String c : categories) {
-            scores.put(c, 0);
+            scores.put(c, new SimpleIntegerProperty(-1));
+            usedCategories.put(c, false);
         }
     }
 
     public void setScore(String category, int value) {
-        scores.put(category, value);
+        scores.get(category).set(value);
+        usedCategories.put(category, true);
+    }
+
+    public IntegerProperty getScoreProperty(String category) {
+        IntegerProperty prop = scores.get(category);
+        if (prop == null) {
+            System.err.println("Unknown category requested: " + category);
+            return new SimpleIntegerProperty(-1);
+        }
+        return prop;
     }
 
     public int getTotal() {
-        return scores.values().stream().mapToInt(Integer::intValue).sum();
+        int sum = 0;
+        for (String cat : getAll().keySet()) {
+            IntegerProperty value = scores.get(cat);
+            if (value != null) sum += value.get();
+        }
+        return sum;
     }
 
     public void printScores(String playerName) {
-        System.out.println("Score TAble (" + playerName + "):");
+        System.out.println("Score Table (" + playerName + "):");
         scores.forEach((k, v) -> System.out.println("  " + k + ": " + v));
         System.out.println("Total: " + getTotal());
     }
 
-    public Map<String, Integer> getAll() {
+    public Map<String, IntegerProperty> getAll() {
         return scores;
     }
 
+    public boolean isUsed(String category) {
+        return usedCategories.getOrDefault(category, false);
+    }
+
+    public boolean isFull() {
+        for (String cat : scores.keySet()) {
+            if (cat.equals("Sum") || cat.equals("Bonus")) continue;
+            if (!isUsed(cat)) return false;
+        }
+        return true;
+    }
+
+    public void reset() {
+        scores.forEach((k, v) -> v.set(-1));
+        usedCategories.replaceAll((k, v) -> false);
+    }
 }

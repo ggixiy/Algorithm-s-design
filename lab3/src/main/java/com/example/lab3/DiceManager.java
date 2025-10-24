@@ -10,6 +10,8 @@ public class DiceManager {
     public DiceManager(int diceCount) {
         dice = new int[diceCount];
         held = new boolean[diceCount];
+
+        reset();
     }
 
     public void roll() {
@@ -19,7 +21,7 @@ public class DiceManager {
     }
 
     public void hold(int index) {
-        if (index >= 0 && index < held.length) held[index] = !held[index];
+        if (index >= 0 && index < held.length) held[index] = true;
     }
 
     public void reset() {

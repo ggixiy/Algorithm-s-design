@@ -12,7 +12,7 @@ public class Main {
         solver1.Solve();*/
 
         System.out.println("Started BCTR:");
-        BCTR solver2 = new BCTR(g.edges, 1050);
+        BCTR solver2 = new BCTR(g.edges, 1080);
         solver2.Solve();
 
     }

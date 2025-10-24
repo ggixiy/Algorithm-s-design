@@ -64,16 +64,16 @@ public class BCTR {
     }
 
     private void Backtracking(int current, int cost, List<Integer> route){
+        iterations++;
 
         if (System.currentTimeMillis() - startTime > MAX_TIME_MS) {
             found = true;
+            deadEnds++;
             return;
         }
 
         nodesInMemory = Math.max(nodesInMemory, route.size());
         if (found) return;
-
-        nodes++;
 
         if(AllCitiesVisited()){
             int finalCost = cost + edges[current][route.get(0)];
@@ -88,20 +88,21 @@ public class BCTR {
         Integer[] sortedNeighbors = SortNeighbors(current);
         //Integer[] sortedNeighbors = SortNeighbors2(current);
 
+        nodes++;
         for(int i = 0; i < sortedNeighbors.length; i++){
             if(!visited[sortedNeighbors[i]]){
 
                 int newCost = cost + edges[current][sortedNeighbors[i]];
+
                 if(newCost >= limit){
                     deadEnds++;
                     break;
                 }
 
-                iterations++;
-
                 visited[sortedNeighbors[i]] = true;
                 route.add(sortedNeighbors[i]);
                 Backtracking(sortedNeighbors[i], newCost, route);
+                if(found) break;
                 route.remove(route.size() - 1);
                 visited[sortedNeighbors[i]] = false;
             }

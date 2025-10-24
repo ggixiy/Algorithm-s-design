@@ -11,9 +11,13 @@ public class AnnealTSP {
     List<Integer> finalRoute;
     private Random r = new Random();
 
+    private long startTime;
+    private static final long MAX_TIME_MS = 30 * 60 * 1000;
+
     private int iterations = 0;
     private int nodes = 0;
     private int worseOptionTaken = 0;
+    private  int accepted = 0;
 
     public AnnealTSP(int[][] edges, int limit){
         this.limit = limit;
@@ -23,6 +27,7 @@ public class AnnealTSP {
 
     public void Solve(){
         List<Integer> route = PrimaryRoute();
+        startTime = System.currentTimeMillis();
         SimulatedAnnealing(route);
 
         if(GetValue(finalRoute) <= limit){
@@ -44,19 +49,22 @@ public class AnnealTSP {
             System.out.println("Iterations: " + iterations);
             System.out.println("Nodes: " + nodes);
             System.out.println("Worse option was taken: " + worseOptionTaken);
+            System.out.println("Accepted: " + accepted);
         } else {
             System.out.println("Couldn`t find solution within limit");
             System.out.println("Iterations: " + iterations);
             System.out.println("Nodes: " + nodes);
             System.out.println("Worse option was taken: " + worseOptionTaken);
+            System.out.println("Accepted: " + accepted);
         }
     }
 
     private void SimulatedAnnealing(List<Integer> route){
         List<Integer> current = route;
         nodes++;
+        accepted++;
 
-        while (T > 1e-3 && GetValue(current) > limit){
+        while (T > 1e-3 && GetValue(current) > limit && System.currentTimeMillis() - startTime < MAX_TIME_MS){
             iterations++;
 
             T = Schedule(T);
@@ -66,8 +74,10 @@ public class AnnealTSP {
             int deltaE = GetValue(current) - GetValue(next);
             if(deltaE > 0 ){
                 current = next;
+                accepted++;
             } else if(Math.exp(deltaE / T) > r.nextDouble()){ // коли темпераутра низька Math.exp(deltaE / T) майже рівне нулю (ймовірність Больцмана)
                 current = next;
+                accepted++;
                 worseOptionTaken++;
             }
 

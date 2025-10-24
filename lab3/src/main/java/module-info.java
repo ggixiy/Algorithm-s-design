@@ -10,6 +10,7 @@ module com.example.lab3 {
     requires org.kordamp.bootstrapfx.core;
     requires eu.hansolo.tilesfx;
     requires com.almasb.fxgl.all;
+    requires javafx.base;
 
     opens com.example.lab3 to javafx.fxml;
     exports com.example.lab3;
