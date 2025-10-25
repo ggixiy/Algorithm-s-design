@@ -4,7 +4,7 @@ import java.util.*;
 
 public class DiceManager {
     private final int[] dice;
-    private final boolean[] held;
+    public final boolean[] held;
     private final Random random = new Random();
 
     public DiceManager(int diceCount) {

@@ -11,7 +11,7 @@ import javafx.stage.Stage;
 
 public class FxUI extends Application implements UI {
 
-    private GameEngine engine;
+    public GameEngine engine;
     private final TextArea log = new TextArea();
     private final CheckBox[] holdBoxes = new CheckBox[5];
     private final Label[] diceLabels = new Label[5];
@@ -228,11 +228,6 @@ public class FxUI extends Application implements UI {
         }
 
         scoreTable.refresh();
-    }
-
-    @Override
-    public String askCategory() { //vyrishyty chos
-        return null; // більше не використовується
     }
 
     @Override

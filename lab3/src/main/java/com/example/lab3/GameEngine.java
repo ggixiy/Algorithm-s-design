@@ -111,7 +111,7 @@ public class GameEngine {
             playTurn(bot);
         }
     }
-    
+
     private void playHumanTurn() {
         if (rollCount >= 3) {
             ui.showMessage("You have already rolled dices 3 times. Choose category in table.");
@@ -161,12 +161,18 @@ public class GameEngine {
         while (rollCount < 3){
             dice.roll();
             ui.showDice(dice.getValues());
+            ui.showMessage((rollCount + 1) +" roll.");
             if (isYatzyRolled()) {
                 ui.showMessage("🎉 YATZY! All dices are the same!");
                 handleYatzyAuto();
                 return;
             }
             bot.makeHoldDecisions(dice);
+            String message = bot.getName() + " decided to hold: ";
+            for (int i = 0; i < dice.held.length; i++) {
+                if (dice.held[i]) message += (i + 1) + " ";
+            }
+            ui.showMessage(message);
             rollCount++;
         }
 

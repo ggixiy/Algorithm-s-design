@@ -10,8 +10,4 @@ public class Player {
 
     public String getName() { return name; }
     public ScoreTable getTable() { return table; }
-
-    public String chooseCategory(UI ui) {
-        return ui.askCategory();
-    }
 }

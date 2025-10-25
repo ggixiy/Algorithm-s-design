@@ -59,7 +59,7 @@ public class ScoreTable {
 
     public boolean isFull() {
         for (String cat : scores.keySet()) {
-            if (cat.equals("Sum") || cat.equals("Bonus")) continue;
+            if (cat.equals("Sum") || cat.equals("Bonus") || cat.equals("Yatzy bonus")) continue;
             if (!isUsed(cat)) return false;
         }
         return true;

@@ -15,7 +15,6 @@ public class ConsoleUI implements UI {
         System.out.println("Cubiki: " + Arrays.toString(dice));
     }
 
-    @Override
     public String askCategory() {
         System.out.print("Enter category: ");
         return scanner.nextLine().trim().toUpperCase();
