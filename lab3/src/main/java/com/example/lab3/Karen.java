@@ -7,115 +7,212 @@ public class Karen extends Player {
     private final Random random = new Random();
     private String lastCategory;
     private int lastScore;
+    private GameEngine engine;
 
     public Karen(String name) {
         super(name);
     }
 
-    public String chooseCategory(UI ui) {
-        FxUI fxui = (FxUI) ui;
-        GameEngine engine = fxui.engine;
+    public void setEngine(GameEngine engine) {
+        this.engine = engine;
+    }
 
-        // Отримуємо список доступних категорій
-        List<String> available = new ArrayList<>();
+    public String chooseCategory(UI ui) {
+        List<String> availableCategories = new ArrayList<>();
         for (var e : table.getAll().entrySet()) {
-            String category = e.getKey();
-            if (!table.isUsed(category) &&
-                    !category.equals("Sum") &&
-                    !category.equals("Bonus") &&
-                    !category.equals("Yatzy bonus")) {
-                available.add(category);
+            String cat = e.getKey();
+            if (!table.isUsed(cat) && !cat.equals("Sum") && !cat.equals("Bonus") && !cat.equals("Yatzy bonus")) {
+                availableCategories.add(cat);
             }
         }
 
-        if (available.isEmpty()) return "Chance";
-
-        // Викликаємо мінімакс для кожної категорії
+        int[] diceValues = engine.getDices();
         String bestCategory = null;
-        double bestValue = Double.NEGATIVE_INFINITY;
+        int bestScore = -1;
 
-        for (String cat : available) {
-            double value = minimax(engine, cat, 3, true);
-            if (value > bestValue) {
-                bestValue = value;
+        for (String cat : availableCategories) {
+            int score = engine.calculateCategoryScore(cat, diceValues);
+            if (score > bestScore) {
+                bestScore = score;
                 bestCategory = cat;
             }
         }
 
-        if (bestCategory == null) {
-            // fallback якщо щось піде не так
-            bestCategory = available.get(random.nextInt(available.size()));
-        }
+        // Якщо не знайшли (дуже рідко) — випадково
+        if (bestCategory == null)
+            bestCategory = availableCategories.get(new Random().nextInt(availableCategories.size()));
 
         return bestCategory;
     }
 
-    /**
-     * Алгоритм мінімакс (спрощений, 1 хід уперед).
-     * Глибина = 1 → оцінюємо лише поточну позицію.
-     */
-    private double minimax(GameEngine engine, String category, int depth, boolean maximizingPlayer) {
-        if (depth == 0) {
-            return evaluateState(engine);
-        }
-
-        // Поточний стан: якщо бот вибере цю категорію
-        int score = engine.calculateCategoryScore(category);
-
-        // Далі можна уявити, що гравець людина відповість оптимально (мінімізує результат)
-        double opponentResponse = evaluateOpponentPotential(engine);
-
-        // Класична формула мінімаксу
-        if (maximizingPlayer) {
-            return score - opponentResponse;
-        } else {
-            return opponentResponse - score;
-        }
-    }
-
-    /**
-     * Оцінює поточний стан гри для Karen.
-     * Використовується як "оцінювальна функція" у мінімакс.
-     */
-    private double evaluateState(GameEngine engine) {
-        int totalBot = engine.getBot().getTable().getTotal();
-        int totalHuman = engine.getCurrentPlayer().getTable().getTotal();
-        return totalBot - totalHuman;
-    }
-
-    /**
-     * Оцінює потенціал відповіді опонента (евристично — на основі його суми).
-     */
-    private double evaluateOpponentPotential(GameEngine engine) {
-        Player human = engine.getCurrentPlayer();
-        int totalHuman = human.getTable().getTotal();
-        int remaining = 13 - countUsedCategories(human);
-        if (remaining <= 0) return 0;
-        return (double) totalHuman / remaining;
-    }
-
-    private int countUsedCategories(Player player) {
-        int count = 0;
-        for (var e : player.getTable().getAll().entrySet()) {
-            if (player.getTable().isUsed(e.getKey())) count++;
-        }
-        return count;
-    }
-
-    /**
-     * Хід перекидання кубиків (бот намагається побудувати комбінацію).
-     * Частина стратегії мінімаксу — "максимізація шансів" поточного стану.
-     */
     public void makeHoldDecisions(DiceManager dice) {
-        int[] vals = dice.getValues();
-        Map<Integer, Integer> freq = new HashMap<>();
-        for (int v : vals) freq.put(v, freq.getOrDefault(v, 0) + 1);
+        int[] currentDice = dice.getValues();
+        boolean[] bestHold = new boolean[currentDice.length];
+        double bestValue = Double.NEGATIVE_INFINITY;
 
-        int mostCommon = Collections.max(freq.entrySet(), Map.Entry.comparingByValue()).getKey();
-
-        for (int i = 0; i < vals.length; i++) {
-            if (vals[i] == mostCommon) dice.hold(i);
+        // Поточний стан гри
+        List<String> availableCategories = new ArrayList<>();
+        for (var e : table.getAll().entrySet()) {
+            String cat = e.getKey();
+            if (!table.isUsed(cat) && !cat.equals("Sum") && !cat.equals("Bonus") && !cat.equals("Yatzy bonus")) {
+                availableCategories.add(cat);
+            }
         }
+
+        // Перебираємо всі варіанти утримання кубиків
+        for (boolean[] holdOption : allHoldCombinations(currentDice.length)) {
+            State state = new State(
+                    currentDice,
+                    holdOption,
+                    3 - engine.getRollCount(), // залишилося перекидань
+                    availableCategories,
+                    table.getTotal(),
+                    engine.getHumanPlayer().getTable().getTotal()
+            );
+
+            double value = expectimax(state, false); // після Max вузла йде Chance
+            if (value > bestValue) {
+                bestValue = value;
+                bestHold = holdOption;
+            }
+        }
+
+        // Встановлюємо утримання у DiceManager
+        for (int i = 0; i < bestHold.length; i++) {
+            if (bestHold[i]) dice.hold(i);
+            else dice.release(i);
+        }
+    }
+
+    /**
+     * Expectimax з заданою глибиною.
+     */
+    private double expectimax(State state, boolean isMax) {
+        if (state.rollsLeft == 0) return evaluateState(state);
+
+        if(isMax){
+            return maxValue(state);
+        }else{
+            return expValue(state);
+        }
+    }
+
+    private double evaluateState(State state) {
+        double max = 0;
+        for(String cat: state.availableCategories){
+            int value = engine.calculateCategoryScore(cat, state.dice);
+            max = Math.max(value, max);
+        }
+        return max;
+    }
+
+    private double maxValue(State state){
+        double bestValue = Double.NEGATIVE_INFINITY;
+        for (boolean[] holdOption : allHoldCombinations(state.dice.length)) {
+            State nextState = new State(
+                    state.dice,
+                    holdOption,
+                    state.rollsLeft - 1,
+                    state.availableCategories,
+                    state.botScore,
+                    state.humanScore
+            );
+            double value = expectimax(nextState, false);
+            bestValue = Math.max(bestValue, value);
+        }
+        return bestValue;
+    }
+
+    private double expValue(State state) {
+        // Кількість кубиків, які будемо перекидати
+        int freeDice = 0;
+        for (boolean h : state.held) {
+            if (!h) freeDice++;
+        }
+
+        // Генеруємо всі комбінації кубиків без урахування порядку
+        List<int[]> combinations = new ArrayList<>();
+        generateCombinations(freeDice, 1, new int[freeDice], combinations);
+
+        double total = 0.0;
+
+        for (int[] combo : combinations) {
+            // Створюємо новий масив кубиків, враховуючи утримані
+            int[] newDice = Arrays.copyOf(state.dice, state.dice.length);
+            int idx = 0;
+            for (int i = 0; i < newDice.length; i++) {
+                if (!state.held[i]) {
+                    newDice[i] = combo[idx++];
+                }
+            }
+
+            // Ймовірність комбінації
+            double prob = combinationProbability(combo);
+
+            // Створюємо новий стан
+            State nextState = new State(
+                    newDice,
+                    state.held,
+                    state.rollsLeft - 1,
+                    state.availableCategories,
+                    state.botScore,
+                    state.humanScore
+            );
+
+            // Викликаємо expectimax рекурсивно, щоб визначити наступний вузол
+            double value = expectimax(nextState, true); // після Chance йде Max
+
+            total += prob * value;
+        }
+
+        return total;
+    }
+
+    private List<boolean[]> allHoldCombinations(int n) {
+        List<boolean[]> combinations = new ArrayList<>();
+        int total = 1 << n; // 2^n
+
+        for (int mask = 0; mask < total; mask++) {
+            boolean[] hold = new boolean[n];
+            for (int i = 0; i < n; i++) {
+                hold[i] = ((mask >> i) & 1) == 1;
+            }
+            combinations.add(hold);
+        }
+
+        return combinations;
+    }
+
+    private void generateCombinations(int diceLeft, int start, int[] current, List<int[]> result) {
+        if (diceLeft == 0) {
+            result.add(Arrays.copyOf(current, current.length));
+            return;
+        }
+        for (int i = start; i <= 6; i++) {
+            current[current.length - diceLeft] = i;
+            generateCombinations(diceLeft - 1, i, current, result);
+        }
+    }
+
+    private double combinationProbability(int[] combo) {
+        int k = combo.length;
+        int totalPermutations = (int) Math.pow(6, k);
+
+        Map<Integer, Integer> freq = new HashMap<>();
+        for (int v : combo) freq.put(v, freq.getOrDefault(v, 0) + 1);
+
+        int permutationsOfCombo = factorial(k);
+        for (int count : freq.values()) {
+            permutationsOfCombo /= factorial(count);
+        }
+
+        return (double) permutationsOfCombo / totalPermutations;
+    }
+
+    private int factorial(int n) {
+        int f = 1;
+        for (int i = 2; i <= n; i++) f *= i;
+        return f;
     }
 
     public void setLastCategory(String cat) { lastCategory = cat; }

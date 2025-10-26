@@ -1,5 +1,6 @@
 package com.example.lab3;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import javafx.beans.property.IntegerProperty;
@@ -59,8 +60,16 @@ public class GameEngine {
         return currentPlayer;
     }
 
+    public int[] getDices() {
+        return dice.getValues();
+    }
+
     public Karen getBot() {
         return bot;
+    }
+
+    public Player getHumanPlayer() {
+        return human;
     }
 
     public int getRollCount() {
@@ -167,7 +176,10 @@ public class GameEngine {
                 handleYatzyAuto();
                 return;
             }
+
             bot.makeHoldDecisions(dice);
+            System.out.println(Arrays.toString(dice.getValues()));
+
             String message = bot.getName() + " decided to hold: ";
             for (int i = 0; i < dice.held.length; i++) {
                 if (dice.held[i]) message += (i + 1) + " ";
@@ -182,8 +194,7 @@ public class GameEngine {
         applyCategory(category, score);
     }
 
-    public int calculateCategoryScore(String category) {
-        int[] diceValues = dice.getValues();
+    public int calculateCategoryScore(String category, int[] diceValues) {
         Map<Integer, Integer> counts = new HashMap<>();
         for (int v : diceValues) counts.put(v, counts.getOrDefault(v, 0) + 1);
 
@@ -219,6 +230,10 @@ public class GameEngine {
             default:
                 return 0;
         }
+    }
+
+    public int calculateCategoryScore(String category) {
+        return calculateCategoryScore(category, dice.getValues());
     }
 
     public void applyCategory(String category, int score) {
@@ -320,6 +335,7 @@ public class GameEngine {
         }
 
         dice.reset();
+        ui.releaseHoldBoxes();
         rollCount = 0;
         checkEndGame();
 

@@ -69,6 +69,7 @@ public class FxUI extends Application implements UI {
         stage.show();
 
         engine = new GameEngine(human, bot, this);
+        bot.setEngine(engine);
 
         // Обробники кнопок
         startButton.setOnAction(e -> {
@@ -235,6 +236,7 @@ public class FxUI extends Application implements UI {
         return holdBoxes[index].isSelected();
     }
 
+    @Override
     public void releaseHoldBoxes(){
         for (CheckBox holdBox : holdBoxes) {
             holdBox.setSelected(false);

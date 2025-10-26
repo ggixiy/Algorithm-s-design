@@ -24,6 +24,10 @@ public class DiceManager {
         if (index >= 0 && index < held.length) held[index] = true;
     }
 
+    public void release(int index) {
+        if (index >= 0 && index < held.length) held[index] = false;
+    }
+
     public void reset() {
         Arrays.fill(held, false);
         Arrays.fill(dice, 0);
