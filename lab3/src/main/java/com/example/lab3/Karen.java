@@ -8,6 +8,23 @@ public class Karen extends Player {
     private String lastCategory;
     private int lastScore;
     private GameEngine engine;
+    private static final Map<String, Double> targetScores = new HashMap<>();
+    static {
+        targetScores.put("Ones", 3.0);
+        targetScores.put("Twos", 6.0);
+        targetScores.put("Threes", 9.0);
+        targetScores.put("Fours", 12.0);
+        targetScores.put("Fives", 15.0);
+        targetScores.put("Sixes", 18.0);
+
+        targetScores.put("Three of a kind", 22.0);
+        targetScores.put("Four of a kind", 18.0);
+        targetScores.put("Full house", 20.0);
+        targetScores.put("Small straight", 25.0);
+        targetScores.put("Large straight", 35.0);
+        targetScores.put("Yatzy", 25.0);
+        targetScores.put("Chance", 30.0);
+    }
 
     public Karen(String name) {
         super(name);
@@ -26,7 +43,7 @@ public class Karen extends Player {
             }
         }
 
-        int[] diceValues = engine.getDices();
+        /*int[] diceValues = engine.getDices();
         String bestCategory = null;
         int bestScore = -1;
 
@@ -36,9 +53,24 @@ public class Karen extends Player {
                 bestScore = score;
                 bestCategory = cat;
             }
+        }*/
+
+        int[] diceValues = engine.getDices();
+        String bestCategory = null;
+        double bestHeuristicValue = Double.NEGATIVE_INFINITY;
+
+        for (String cat : availableCategories) {
+            int score = engine.calculateCategoryScore(cat, diceValues);
+
+            double target = targetScores.getOrDefault(cat, 0.0);
+            double heuristicValue = score - target;
+
+            if (heuristicValue >= bestHeuristicValue) {
+                bestHeuristicValue = heuristicValue;
+                bestCategory = cat;
+            }
         }
 
-        // Якщо не знайшли (дуже рідко) — випадково
         if (bestCategory == null)
             bestCategory = availableCategories.get(new Random().nextInt(availableCategories.size()));
 
@@ -50,7 +82,6 @@ public class Karen extends Player {
         boolean[] bestHold = new boolean[currentDice.length];
         double bestValue = Double.NEGATIVE_INFINITY;
 
-        // Поточний стан гри
         List<String> availableCategories = new ArrayList<>();
         for (var e : table.getAll().entrySet()) {
             String cat = e.getKey();
@@ -59,34 +90,29 @@ public class Karen extends Player {
             }
         }
 
-        // Перебираємо всі варіанти утримання кубиків
         for (boolean[] holdOption : allHoldCombinations(currentDice.length)) {
             State state = new State(
                     currentDice,
                     holdOption,
-                    3 - engine.getRollCount(), // залишилося перекидань
+                    3 - engine.getRollCount(),
                     availableCategories,
                     table.getTotal(),
                     engine.getHumanPlayer().getTable().getTotal()
             );
 
-            double value = expectimax(state, false); // після Max вузла йде Chance
+            double value = expectimax(state, false);
             if (value > bestValue) {
                 bestValue = value;
                 bestHold = holdOption;
             }
         }
 
-        // Встановлюємо утримання у DiceManager
         for (int i = 0; i < bestHold.length; i++) {
             if (bestHold[i]) dice.hold(i);
             else dice.release(i);
         }
     }
 
-    /**
-     * Expectimax з заданою глибиною.
-     */
     private double expectimax(State state, boolean isMax) {
         if (state.rollsLeft == 0) return evaluateState(state);
 
@@ -98,6 +124,22 @@ public class Karen extends Player {
     }
 
     private double evaluateState(State state) {
+        //if(state.availableCategories.size() >= 7) {
+        /*double bestHeuristicValue = Double.NEGATIVE_INFINITY;
+
+            for (String cat : state.availableCategories) {
+                int score = engine.calculateCategoryScore(cat, state.dice);
+
+                double target = targetScores.getOrDefault(cat, 0.0);
+                double heuristicValue = score - target;
+
+                if (heuristicValue >= bestHeuristicValue) {
+                    bestHeuristicValue = heuristicValue;
+                }
+            }
+            return bestHeuristicValue;*/
+
+
         double max = 0;
         for(String cat: state.availableCategories){
             int value = engine.calculateCategoryScore(cat, state.dice);
@@ -124,20 +166,17 @@ public class Karen extends Player {
     }
 
     private double expValue(State state) {
-        // Кількість кубиків, які будемо перекидати
         int freeDice = 0;
         for (boolean h : state.held) {
             if (!h) freeDice++;
         }
 
-        // Генеруємо всі комбінації кубиків без урахування порядку
         List<int[]> combinations = new ArrayList<>();
         generateCombinations(freeDice, 1, new int[freeDice], combinations);
 
         double total = 0.0;
 
         for (int[] combo : combinations) {
-            // Створюємо новий масив кубиків, враховуючи утримані
             int[] newDice = Arrays.copyOf(state.dice, state.dice.length);
             int idx = 0;
             for (int i = 0; i < newDice.length; i++) {
@@ -146,10 +185,8 @@ public class Karen extends Player {
                 }
             }
 
-            // Ймовірність комбінації
             double prob = combinationProbability(combo);
 
-            // Створюємо новий стан
             State nextState = new State(
                     newDice,
                     state.held,
@@ -159,8 +196,7 @@ public class Karen extends Player {
                     state.humanScore
             );
 
-            // Викликаємо expectimax рекурсивно, щоб визначити наступний вузол
-            double value = expectimax(nextState, true); // після Chance йде Max
+            double value = expectimax(nextState, true);
 
             total += prob * value;
         }
@@ -170,12 +206,12 @@ public class Karen extends Player {
 
     private List<boolean[]> allHoldCombinations(int n) {
         List<boolean[]> combinations = new ArrayList<>();
-        int total = 1 << n; // 2^n
+        int total = (int) Math.pow(2, n);
 
-        for (int mask = 0; mask < total; mask++) {
+        for (int i = 0; i < total; i++) {
             boolean[] hold = new boolean[n];
-            for (int i = 0; i < n; i++) {
-                hold[i] = ((mask >> i) & 1) == 1;
+            for (int j = 0; j < n; j++) {
+                hold[j] = ((i >> j) & 1) == 1; // зсув і вправо на j бітів
             }
             combinations.add(hold);
         }

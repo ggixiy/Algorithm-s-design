@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<BorderPane xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml"
+            fx:controller="com.example.lab4.DataBaseController">
+
+    <top>
+        <HBox spacing="10">
+            <padding>
+                <Insets top="10" right="10" bottom="10" left="10"/>
+            </padding>
+            <Label text="ID:"/>
+            <TextField fx:id="idField" promptText="Integer key"/>
+            <Label text="Data:"/>
+            <TextField fx:id="dataField" promptText="Record data"/>
+
+            <Button text="Add" onAction="#onAdd"/>
+            <Button text="Edit" onAction="#onEdit"/>
+            <Button text="Delete" onAction="#onDelete"/>
+        </HBox>
+    </top>
+
+    <center>
+        <TableView fx:id="table" prefHeight="200" prefWidth="400">
+            <columns>
+                <TableColumn fx:id="idColumn" text="ID" prefWidth="100"/>
+                <TableColumn fx:id="dataColumn" text="Data" prefWidth="300"/>
+            </columns>
+        </TableView>
+    </center>
+
+    <bottom>
+        <HBox spacing="10">
+            <padding>
+                <Insets top="10" right="10" bottom="10" left="10"/>
+            </padding>
+            <Label text="Search:"/>
+            <TextField fx:id="searchField" promptText="Enter key"/>
+            <Button text="Search" onAction="#onSearch"/>
+            <Button text="Show All" onAction="#onShowAll"/>
+        </HBox>
+    </bottom>
+
+</BorderPane>

@@ -1,9 +1,12 @@
 package com.example.lab3;
 
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+
+import javafx.animation.PauseTransition;
+import javafx.application.Platform;
 import javafx.beans.property.IntegerProperty;
+import javafx.util.Duration;
 
 public class GameEngine {
 
@@ -64,10 +67,6 @@ public class GameEngine {
         return dice.getValues();
     }
 
-    public Karen getBot() {
-        return bot;
-    }
-
     public Player getHumanPlayer() {
         return human;
     }
@@ -99,10 +98,6 @@ public class GameEngine {
         playHumanTurn();
     }
 
-    /**
-     * Наступний гравець. Викликається після того, як користувач обрав категорію у таблиці.
-     * Якщо наступний гравець — бот, його хід виконається автоматично.
-     */
     public void nextTurn() {
         if (!gameStarted) {
             ui.showMessage("Press button to start.");
@@ -140,7 +135,6 @@ public class GameEngine {
             return;
         }
 
-        // vrahovuyemo utymannya na 2-3 hid
         for (int i = 0; i < 5; i++) {
             if (ui.askHold(i)) {
                 dice.hold(i);
@@ -162,36 +156,48 @@ public class GameEngine {
         }
     }
 
-    // Логіка ходу бота: робить до 2 перекидань з утриманням, вибирає категорію і записує очки
     private void playBotTurn() {
         ui.showMessage(bot.getName() + " is making move...");
-
         dice.releaseAll();
-        while (rollCount < 3){
-            dice.roll();
-            ui.showDice(dice.getValues());
-            ui.showMessage((rollCount + 1) +" roll.");
-            if (isYatzyRolled()) {
-                ui.showMessage("🎉 YATZY! All dices are the same!");
-                handleYatzyAuto();
-                return;
-            }
+        rollCount = 0;
 
-            bot.makeHoldDecisions(dice);
-            System.out.println(Arrays.toString(dice.getValues()));
+        playBotRoll();
+    }
 
-            String message = bot.getName() + " decided to hold: ";
-            for (int i = 0; i < dice.held.length; i++) {
-                if (dice.held[i]) message += (i + 1) + " ";
-            }
-            ui.showMessage(message);
-            rollCount++;
+    private void playBotRoll() {
+        if (rollCount >= 3) {
+            PauseTransition delayBeforeCategory = new PauseTransition(Duration.seconds(2));
+            delayBeforeCategory.setOnFinished(event -> {
+                String category = bot.chooseCategory(ui);
+                int score = calculateCategoryScore(category);
+                applyCategory(category, score);
+
+                Platform.runLater(() -> ui.releaseHoldBoxes());
+            });
+            delayBeforeCategory.play();
+            return;
         }
 
-        String category = bot.chooseCategory(ui);
-        int score = calculateCategoryScore(category);
+        dice.roll();
+        ui.showDice(dice.getValues());
+        Platform.runLater(() -> ((FxUI) ui).getScoreTable().refresh());
 
-        applyCategory(category, score);
+        if (isYatzyRolled()) {
+            ui.showMessage("🎉 YATZY! All dices are the same!");
+            handleYatzyAuto();
+            return;
+        }
+
+        bot.makeHoldDecisions(dice);
+        ui.showBotHold(dice.held);
+
+        rollCount++;
+
+        Platform.runLater(() -> ((FxUI) ui).getScoreTable().refresh());
+
+        PauseTransition delay = new PauseTransition(Duration.seconds(1.5));
+        delay.setOnFinished(event -> playBotRoll());
+        delay.play();
     }
 
     public int calculateCategoryScore(String category, int[] diceValues) {
@@ -240,7 +246,7 @@ public class GameEngine {
         if (currentPlayer == null) return;
 
         currentPlayer.getTable().setScore(category, score);
-        currentPlayer.getTable().printScores(currentPlayer.getName());
+        ui.getScoreTable().refresh();
         ui.showMessage(currentPlayer.getName() + " scored " + score + " points in category " + category + ".");
 
         if (category.equals("Ones") || category.equals("Twos") || category.equals("Threes") ||
@@ -258,10 +264,6 @@ public class GameEngine {
         rollCount = 0;
         checkEndGame();
     }
-
-    /* ===========================
-       Допоміжні функції підрахунку
-       =========================== */
 
     private int sumOf(int[] dice, int value) {
         int sum = 0;
@@ -320,7 +322,6 @@ public class GameEngine {
             int score = 50;
             table.setScore("Yatzy", score);
             ui.showMessage(currentPlayer.getName() + " automatically scored 50 points in YATZY!");
-            table.printScores(currentPlayer.getName());
 
             if (currentPlayer instanceof Karen botPlayer) {
                 botPlayer.setLastCategory("Yatzy");

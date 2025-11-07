@@ -1,6 +1,7 @@
 package com.example.lab3;
 
 import javafx.application.Application;
+import javafx.application.Platform;
 import javafx.beans.property.*;
 import javafx.collections.*;
 import javafx.geometry.Insets;
@@ -14,7 +15,8 @@ public class FxUI extends Application implements UI {
     public GameEngine engine;
     private final TextArea log = new TextArea();
     private final CheckBox[] holdBoxes = new CheckBox[5];
-    private final Label[] diceLabels = new Label[5];
+    private final DiceView[] diceViews = new DiceView[5];
+
     private final TableView<String> scoreTable = new TableView<>();
     private final ObservableList<String> categories = FXCollections.observableArrayList();
 
@@ -29,20 +31,25 @@ public class FxUI extends Application implements UI {
         VBox root = new VBox(15);
         root.setPadding(new Insets(15));
 
-        // Панель кубиків
         HBox diceBox = new HBox(10);
         for (int i = 0; i < 5; i++) {
             VBox diePane = new VBox(5);
-            Label label = new Label("Dice " + (i + 1) + ": -");
-            diceLabels[i] = label;
+            DiceView diceView = new DiceView();
+            diceViews[i] = diceView;
+
+            VBox.setMargin(diceView, new Insets(0, 0, 35, 0));
+
             CheckBox hold = new CheckBox("Hold");
             holdBoxes[i] = hold;
-            diePane.getChildren().addAll(label, hold);
+            holdBoxes[i].setVisible(false);
+            diePane.getChildren().addAll(diceView, hold);
             diceBox.getChildren().add(diePane);
         }
 
         rollButton = new Button("Roll dices");
         Button startButton = new Button("Start");
+
+        HBox buttonsBox = new HBox(10, startButton, rollButton);
 
         log.setPrefHeight(200);
         log.setEditable(false);
@@ -51,19 +58,18 @@ public class FxUI extends Application implements UI {
         bot = new Karen("Karen");
 
         initScoreTable();
+        scoreTable.setPrefHeight(550);
 
         root.getChildren().addAll(
-                new Label("Yatzy🎲"),
                 diceBox,
-                rollButton,
-                startButton,
+                buttonsBox,
                 new Label("Results table:"),
                 scoreTable,
                 new Label("Logs:"),
                 log
         );
 
-        Scene scene = new Scene(root, 700, 700);
+        Scene scene = new Scene(root, 700, 710);
         stage.setTitle("Yatzy");
         stage.setScene(scene);
         stage.show();
@@ -71,7 +77,6 @@ public class FxUI extends Application implements UI {
         engine = new GameEngine(human, bot, this);
         bot.setEngine(engine);
 
-        // Обробники кнопок
         startButton.setOnAction(e -> {
             clearLog();
             resetTable();
@@ -155,7 +160,7 @@ public class FxUI extends Application implements UI {
 
                 setText(currentScore == -1 ? "" : String.valueOf(currentScore));
 
-                if (engine == null || engine.getRollCount() == 0) {
+                if (engine == null || engine.getRollCount() == 0 || engine.getCurrentPlayer() != human) {
                     setStyle("");
                     return;
                 }
@@ -178,6 +183,36 @@ public class FxUI extends Application implements UI {
             IntegerProperty scoreProp = bot.getTable().getScoreProperty(category);
             String display = scoreProp.get() == -1 ? "" : String.valueOf(scoreProp.get());
             return new SimpleStringProperty(display);
+        });
+
+        botCol.setCellFactory(col -> new TableCell<String, String>() {
+            @Override
+            protected void updateItem(String item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) {
+                    setText(null);
+                    setStyle("");
+                    return;
+                }
+
+                String category = getTableView().getItems().get(getIndex());
+                IntegerProperty scoreProp = bot.getTable().getScoreProperty(category);
+                int currentScore = scoreProp.get();
+
+                setText(currentScore == -1 ? "" : String.valueOf(currentScore));
+
+                if (engine != null && engine.getRollCount() > 0 && engine.getCurrentPlayer() == bot) {
+                    int possibleScore = engine.calculateCategoryScore(category);
+                    if (!bot.getTable().isUsed(category) && possibleScore > 0) {
+                        setText(String.valueOf(possibleScore));
+                        setStyle("-fx-background-color: #ccffcc;");
+                    } else {
+                        setStyle("");
+                    }
+                } else {
+                    setStyle("");
+                }
+            }
         });
         botCol.setPrefWidth(150);
 
@@ -218,14 +253,29 @@ public class FxUI extends Application implements UI {
     }
 
     @Override
+    public TableView<String> getScoreTable() {
+        return scoreTable;
+    }
+
+    @Override
     public void showMessage(String text) {
         log.appendText(text + "\n");
     }
 
     @Override
+    public void showBotHold(boolean[] held) {
+        Platform.runLater(() -> {
+            for (int i = 0; i < held.length; i++) {
+                holdBoxes[i].setSelected(held[i]);
+            }
+        });
+    }
+
+    @Override
     public void showDice(int[] dice) {
         for (int i = 0; i < dice.length; i++) {
-            diceLabels[i].setText("Dice " + (i + 1) + ": " + dice[i]);
+            diceViews[i].setNumber(dice[i]);
+            holdBoxes[i].setVisible(true);
         }
 
         scoreTable.refresh();
@@ -244,8 +294,10 @@ public class FxUI extends Application implements UI {
     }
 
     private void showEmptyDice() {
-        for (int i = 0; i < diceLabels.length; i++) {
-            diceLabels[i].setText("Dice " + (i + 1) + ": -");
+        for (int i = 0; i < diceViews.length; i++) {
+            diceViews[i].setNumber(0); // 0 → порожнє
+            holdBoxes[i].setVisible(false);
+            holdBoxes[i].setSelected(false);
         }
     }
 

@@ -37,16 +37,13 @@ public class ScoreTable {
     public int getTotal() {
         int sum = 0;
         for (String cat : getAll().keySet()) {
-            IntegerProperty value = scores.get(cat);
-            if (value != null) sum += value.get();
+            if (!cat.equals("Sum"))
+            {
+                IntegerProperty value = scores.get(cat);
+                if (value != null && value.get() != -1) sum += value.get();
+            }
         }
         return sum;
-    }
-
-    public void printScores(String playerName) {
-        System.out.println("Score Table (" + playerName + "):");
-        scores.forEach((k, v) -> System.out.println("  " + k + ": " + v));
-        System.out.println("Total: " + getTotal());
     }
 
     public Map<String, IntegerProperty> getAll() {
