@@ -5,6 +5,16 @@ import java.util.List;
 
 public class AVLTree {
 
+    private int comparisonCount = 0;
+
+    public int getComparisonCount() {
+        return comparisonCount;
+    }
+
+    public void resetComparisonCount() {
+        comparisonCount = 0;
+    }
+
     public static int height(Node n){
         if(n == null) return 0;
         return n.getHeight();
@@ -22,7 +32,7 @@ public class AVLTree {
 
         root.setHeight(Math.max(height(root.getLeft()), height(root.getRight())) + 1);
 
-        return balance(root, k);
+        return balance(root);
     }
 
     public Node delete(Node root, int k){
@@ -37,7 +47,6 @@ public class AVLTree {
                 Node temp = root.getLeft() == null ? root.getRight() : root.getLeft();
 
                 if(temp == null){
-                    temp = root;
                     root = null;
                 } else {
                     root = temp;
@@ -54,7 +63,7 @@ public class AVLTree {
 
         root.setHeight(Math.max(height(root.getLeft()), height(root.getRight())) + 1);
 
-        return balance(root, k);
+        return balance(root);
     }
 
     public Node minValue(Node node){
@@ -68,10 +77,12 @@ public class AVLTree {
     }
 
     public Node search(Node root, int k){
+        comparisonCount++;
         if(root == null || root.getKey() == k){
             return root;
         }
 
+        comparisonCount++;
         if(k < root.getKey()){
             return search(root.getLeft(), k);
         } else {
@@ -127,7 +138,7 @@ public class AVLTree {
         return  height(node.getLeft()) - height(node.getRight());
     }
 
-    public Node balance(Node root, int k){
+    public Node balance(Node root){
         int balance = getBalance(root);
 
 
@@ -141,14 +152,12 @@ public class AVLTree {
 
         // LeftRight
         if (balance > 1 && getBalance(root.getLeft()) < 0) {
-            root.setLeft(leftRotation(root.getLeft()));
-            return rightRotation(root);
+            return leftRightRotation(root);
         }
 
         // RightLeft
         if (balance < -1 && getBalance(root.getRight()) > 0) {
-            root.setRight(rightRotation(root.getRight()));
-            return leftRotation(root);
+            return rightLeftRotation(root);
         }
 
         return root;

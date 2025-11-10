@@ -20,6 +20,12 @@
             <Button text="Add" onAction="#onAdd"/>
             <Button text="Edit" onAction="#onEdit"/>
             <Button text="Delete" onAction="#onDelete"/>
+
+            <Region HBox.hgrow="ALWAYS"/>
+            <Label text="Database:"/>
+            <ComboBox fx:id="dbSelector" promptText="Select DB"/>
+            <Button text="New" onAction="#onCreateDb"/>
+            <Button text="Delete" onAction="#onDeleteDb"/>
         </HBox>
     </top>
 
@@ -41,7 +47,23 @@
             <TextField fx:id="searchField" promptText="Enter key"/>
             <Button text="Search" onAction="#onSearch"/>
             <Button text="Show All" onAction="#onShowAll"/>
+
+            <Region HBox.hgrow="ALWAYS"/>
+
+            <TextField fx:id="generationField" promptText="Enter number of records:"/>
+            <Button text="Generate" onAction="#onGenerate"/>
         </HBox>
     </bottom>
+
+    <right>
+        <ScrollPane prefWidth="500" hbarPolicy="AS_NEEDED" vbarPolicy="AS_NEEDED">
+            <content>
+                <Pane fx:id="treeViewPane" />
+            </content>
+            <BorderPane.margin>
+                <Insets top="10" right="10" bottom="10" left="5"/>
+            </BorderPane.margin>
+        </ScrollPane>
+    </right>
 
 </BorderPane>

@@ -4,11 +4,10 @@ import java.util.Random;
 
 public class Generator {
     private Random r = new Random();
-    private int n = 10000;
 
-    public void Generate(){
+    public void Generate(int n, String currentDB){
         String record;
-        try (java.io.PrintWriter writer = new java.io.PrintWriter("database.txt")) {
+        try (java.io.PrintWriter writer = new java.io.PrintWriter(currentDB)) {
             for (int i = 0; i < n; i++) {
                 record = randomString(r.nextInt(10, 100));
                 writer.println( i + 1 + ";" + record);

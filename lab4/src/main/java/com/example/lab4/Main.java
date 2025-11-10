@@ -5,13 +5,11 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
 
-import java.io.IOException;
-
-public class UI extends Application {
+public class Main extends Application {
     @Override
     public void start(Stage stage) throws Exception {
-        FXMLLoader fxmlLoader = new FXMLLoader(UI.class.getResource("database-view.fxml"));
-        Scene scene = new Scene(fxmlLoader.load(), 600, 400);
+        FXMLLoader fxmlLoader = new FXMLLoader(Main.class.getResource("database-view.fxml"));
+        Scene scene = new Scene(fxmlLoader.load(), 800, 400);
         stage.setTitle("Database Interface");
         stage.setScene(scene);
         stage.show();
